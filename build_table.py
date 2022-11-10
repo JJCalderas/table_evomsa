@@ -29,8 +29,7 @@ pre_models_dict = {
     "meoffendes21" : [load_model('pre_models/meoffendes21_Es.evomsa'), stacked_method],
     "mexa3t18_aggress" : [load_model('pre_models/mexa3t18_aggress_Es.evomsa'), stacked_method],
     "misogyny_centrogeo" : [load_model('pre_models/misogyny_centrogeo_Es.evomsa'), stacked_method],
-    "metwo22" : [load_model('pre_models/metwo22_Es.evomsa'), stacked_method],
-    "haha18" : [load_model('pre_models/haha18_Es.evomsa'), stacked_method]
+    "metwo22" : [load_model('pre_models/metwo22_Es.evomsa'), stacked_method]
 }  
 
 print(len(pre_models_dict.keys()), pre_models_dict.keys(), '\n')
@@ -69,7 +68,7 @@ def process(experiment):
     sample_avoid = sample.dropna().values[sample.dropna().values != ds_n]
     
     if (i>0) & (sample_avoid.size < 1):
-        _ = [ds_n, i, train_df.shape, test_df.shape, 0.0, 0.0, sample_avoid.tolist(), i, 0.0, 0.0, 0.0, 0.0, []]
+        _ = [ds_n, i, train_df.shape, test_df.shape, 0.0, 0.0, sample_avoid.tolist(), i, 0.0, 0.0, 0.0, 0.0, [], 0.0]
         return _
    
     # toma los objetos de los pre-modelos
@@ -106,6 +105,7 @@ def process(experiment):
 
         with open(debug_file, 'a', encoding='utf-8') as the_file:
             the_file.write(ds_n + ', ' + str(i) + ', ' + str(f1_score) + ', ' + str(np.mean(scores_kfold, axis=0)) + ' \n')
+    
     except Exception as ex:
         with open(debug_file, 'a', encoding='utf-8') as the_file:
             the_file.write(ds_n + ', ' + i + ', ' + str(ex) + ' \n')
@@ -127,7 +127,7 @@ for fn in fnames:
         experiments.append([ds_name, train_df, test_df, i, sample])
         
 
-parallel_pool = Parallel(n_jobs=7)
+parallel_pool = Parallel(n_jobs=19)
 delayed_funcs = [delayed(process)(experiment) for experiment in experiments]
 results = parallel_pool(delayed_funcs)
     
