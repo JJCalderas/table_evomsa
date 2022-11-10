@@ -7,12 +7,7 @@ from sklearn.model_selection import StratifiedKFold
 import numpy as np
 from joblib import Parallel, delayed
 import joblib as joblib
-from timeit import default_timer as timer
-
-import random
-
-from  threading import Thread
-from time import sleep, perf_counter
+import timeit
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -50,17 +45,19 @@ debug_file = 'debug_301.txt'
 
 def process(experiment):
             
+    starttime = timeit.default_timer()
+    
     ds_n = experiment[0]
     train_df = experiment[1]
     test_df = experiment[2]
     i = experiment[3]
     sample = experiment[4]
 
-    print('Start >> ', i, ds_n)
+    # print('Start >> ', i, ds_n)
 
     # recortarlos
-    train_df = train_df.loc[0:49, ['text', 'klass']]
-    test_df = test_df.loc[0:12, ['text', 'klass']]
+    #train_df = train_df.loc[0:49, ['text', 'klass']]
+    #test_df = test_df.loc[0:12, ['text', 'klass']]
 
     X_train, y_train = train_df['text'], train_df['klass']
     X_test,  y_test  = test_df['text'],  test_df['klass']
@@ -98,18 +95,20 @@ def process(experiment):
 
             scores_kfold.append(f1_score_F)
 
-        print(i, ds_n, train_df.shape, test_df.shape, i, f1_score, recall_score, ' << \n')
+        endtime = timeit.default_timer() - starttime     
+            
+        # print(i, ds_n, train_df.shape, test_df.shape, i, f1_score, recall_score, ' << \n')
 
         _ = [ds_n, i, train_df.shape, test_df.shape, f1_score, recall_score, 
              sample_avoid.tolist(),
-             i, np.mean(scores_kfold, axis=0), np.std(scores_kfold, axis=0), np.min(scores_kfold), np.max(scores_kfold), scores_kfold]
+             i, np.mean(scores_kfold, axis=0), np.std(scores_kfold, axis=0), np.min(scores_kfold), np.max(scores_kfold), scores_kfold,
+            endtime]
 
         with open(debug_file, 'a', encoding='utf-8') as the_file:
             the_file.write(ds_n + ', ' + str(i) + ', ' + str(f1_score) + ', ' + str(np.mean(scores_kfold, axis=0)) + ' \n')
     except Exception as ex:
         with open(debug_file, 'a', encoding='utf-8') as the_file:
             the_file.write(ds_n + ', ' + i + ', ' + str(ex) + ' \n')
-        
         
     return _
 
@@ -125,19 +124,15 @@ for fn in fnames:
     ds_name = fn.replace("../dataset_es\\",'').replace("../dataset_es/",'').replace("..\\dataset_es\\",'').replace('_Es_train.json','')
     
     for i, sample in df_samples.iterrows():
-        if i < 2:
-            experiments.append([ds_name, train_df, test_df, i, sample])
+        experiments.append([ds_name, train_df, test_df, i, sample])
         
 
 parallel_pool = Parallel(n_jobs=7)
 delayed_funcs = [delayed(process)(experiment) for experiment in experiments]
 results = parallel_pool(delayed_funcs)
-
-for r in results:
-    print(r)
     
 results_df = pd.DataFrame(data=results, columns=['dataset', 'combina_1', 'train.shape', 'test.shape', 'f1', 'recall','combinations',
-                                                 'combina_2', 'media', 'desviacion', 'minimimo', 'maximo', 'folds'])
+                                                 'combina_2', 'media', 'desviacion', 'minimimo', 'maximo', 'folds', 'elapsed'])
 results_df.to_csv('results_301.csv')    
                        
 
